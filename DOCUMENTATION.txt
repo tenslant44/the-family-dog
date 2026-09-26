@@ -1,0 +1,834 @@
+THE FAMILY DOG
+Detailed game and project documentation
+========================================
+
+This guide describes the current files in the project revision. It covers
+how to play, item effects, scoring, achievements, saved data, and the code
+layout. When a detail depends on implementation, the JavaScript source is
+the final authority.
+
+
+1. PROJECT SUMMARY
+------------------
+The Family Dog is a single-player, third-person cartoon physics game made
+with HTML, CSS, JavaScript modules, and Three.js. The player explores a
+small suburban yard, interacts with a cartoon dog, and uses tools to launch
+it through the yard and into traffic. Flights, combos, close calls, and
+finishes award coins. Coins unlock equipment and one-use items at the street
+stand.
+
+The dog has health, mood, and seasonal needs. It wanders, retrieves the
+ball, eats from its bowl, reacts to bugs in spring, becomes thirsty in
+summer, and can fight back when angry. The player can also pet, kiss, feed,
+grab, throw, and restrain it. Defeated characters recover or respawn so play
+can continue.
+
+The game is fictional slapstick. Its title screen contains a disclaimer and
+links with guidance for reporting real animal abuse. The game depicts no
+real animal and is not an endorsement of animal abuse.
+
+
+2. STARTING AND BASIC CONTROLS
+------------------------------
+Open the project preview, press Play, and use the mouse to aim. The game
+requests pointer lock so mouse movement can turn the camera. If pointer lock
+is released, click the canvas to resume. Opening the shop or achievement
+panel pauses direct player control until the panel is closed.
+
+Movement and camera
+  W / A / S / D       Move forward, left, backward, and right.
+  Shift               Sprint while moving.
+  Space               Jump.
+  Mouse               Aim and rotate the camera.
+  Left click          Use the selected item once.
+  Mouse wheel         Cycle through owned hotbar items.
+  1 through 9         Select hotbar slots 1 through 9.
+  0                   Select hotbar slot 10.
+
+Touchscreen controls
+  Left stick          Move.
+  Drag open screen    Rotate the camera; tap to use the selected item.
+  Use / Jump          Use the selected item / jump.
+  Run                 Hold to sprint.
+  Grab / Drop         Toggle carrying the dog.
+  Throw               Throw the dog while carrying it.
+  More                Open controls for ragdoll/get up, reload, dog camera,
+                      snow building, season, infinite health, the shop, and
+                      achievements.
+  Hotbar              Swipe horizontally, then tap an item to select it.
+
+Dog and item actions
+  F (hold)            Grab the dog when close; release F to drop it.
+  Click while holding Punch the dog you are carrying.
+  Q while holding     Throw the dog. Sprint first for a stronger throw.
+  E                   Open the shop near the street stand; E closes it too.
+  G                   Reload while the pistol is selected.
+  R                   Enter voluntary ragdoll; press R again to get up.
+  T                   Cycle Default, Spring, Summer, and Winter.
+  B (hold)            Build snow blocks while Winter is active.
+  C                   Toggle the manual dog-follow camera.
+  H                   Open or close the achievements and combos panel.
+  I                   Toggle infinite health for both player and dog.
+
+The number keys select hotbar positions, not fixed item types. Buying items
+adds them to the end of the owned list; Snowball is present only in Winter.
+As the list changes, the item assigned to a number can change. Mouse-wheel
+selection also wraps from the last slot to the first.
+
+Camera behavior
+  A powerful launch or a car hit can briefly switch to an automatic camera
+  that follows the dog. Moving, aiming, selecting an item, or pressing a
+  movement/action key leaves this automatic camera. This automatic view is
+  temporary and distinct from the manual camera toggled with C.
+
+  The manual dog camera stays active until C is pressed again. Player
+  movement remains possible, but tools cannot be used while this camera is
+  active. Its on-screen hint shows the C key. Returning to the normal camera
+  restores the crosshair.
+
+Health behavior
+  Player health regenerates gradually after damage when the player is not
+  ragdolled or knocked out. A knockout lasts briefly, then the player
+  respawns at the yard spawn point with full health. A voluntary ragdoll does
+  not automatically end; use R to get up when able.
+
+  Infinite health is off by default. Turning it on restores both health
+  values and prevents later damage from reducing them. Hits can still move
+  characters, launch the dog, and trigger effects. The setting is saved in
+  this browser. Turning it on while the dog is already defeated resolves any
+  unpaid finish and respawns it.
+
+
+3. GAMEPLAY SYSTEMS
+-------------------
+The main loop is:
+  1. Use a tool or interaction in the yard.
+  2. Follow a flight and add mid-air hits, snowballs, traffic impacts, or
+     environmental collisions to build a chain.
+  3. Let the dog land to settle flight coins and named combo bonuses.
+  4. Spend coins at the stand, then try different launch and combo routes.
+
+Dog mood and behavior
+  The mood meter ranges from -100 to +100. The dog becomes angry below -25
+  mood unless its temporary affection effect is active. Anger can make it
+  chase and attack the player, reject or escape a grab, and bark or growl.
+  At very low mood it can tackle a nearby upright player. A ragdolled player
+  can also be attacked. Anger fades as mood recovers.
+
+  Successful petting, kissing, feeding, and giving a bone or tolerated milk
+  can improve mood. Chocolate makes the dog affectionate temporarily, but
+  also damages it. A pet or kiss can fail against an angry dog and cause it
+  to snap. An angry dog may also resist an attempted grab or break free if
+  held too long.
+
+  The dog wanders around the yard when idle, may chase a free ball when calm,
+  and walks to food placed in its bowl. It can be distracted by spring flies
+  and will jump and snap at them. It occasionally poops while grounded and
+  active; the resulting messes remain visible during the session and attract
+  spring flies.
+
+  The dog has 100 health and gradually regenerates when not sick or knocked
+  out. Its lactose tolerance is chosen randomly when the game session starts
+  and is not stored in the save. Giving it milk reveals the result for that
+  session. An intolerant dog takes immediate and continuing damage from
+  milk; a tolerant dog gets a mood boost. Grapes also cause immediate and
+  continuing damage. The dog recovers and respawns after defeat.
+
+Player interaction
+  Most physical items require the dog to be close and in front of the
+  player. The exact reach varies by action. Kissing is aimed: stand close and
+  point the crosshair at the top of the dog's head. Feeding from the Feed
+  tool is done at the bowl beside the dog house, not directly to the dog.
+
+  Grabbing is done by pressing and holding F near the dog. While holding it,
+  click to punch, press Q to throw, or release F to drop it. A sprinting Q
+  throw has greater launch force. If the player is ragdolled or knocked out,
+  the dog is dropped.
+
+  The reusable Ball can be thrown and retrieved. A calm dog may fetch it and
+  return it to the player. A loose ball can also return automatically when
+  the player approaches it after it has been out for a short time.
+
+  Glue is a spray tool. Sustained spray builds glue on the dog. A sufficiently
+  sticky dog can stick to a surface after a collision or to the ground after
+  a fall; wall attachment is tracked for the Sticky Situation combo.
+
+  The Chain is permanent equipment. Use it near the dog to attach a 5.5 m
+  simulated chain; use it again to unchain. A strong pull from a flying dog
+  can drag the player or knock them into ragdoll. It is removed when the dog
+  is defeated or certain respawn events occur.
+
+Traffic and the yard
+  Cars loop continuously around the road outside the yard. They can hit the
+  player, dog, or John the Fish. A player hit awards 5 coins and a dog hit
+  starts or extends a traffic flight. Close calls award 3 coins. The yard
+  contains the dog house and bowl, a trash area, garden and patio props, a
+  kiddie pool, a surrounding fence with a gate, and the shop stand across
+  the road. Traffic is a hazard and a way to continue or score flights.
+
+  Flight distance is horizontal distance from the first launch point to the
+  landing point. A landing is outside the yard when it is outside the
+  rectangle bounded by x = -16 to 16 and z = -12 to 14.
+
+Defeat and respawn
+  Damage reduces dog health. At zero health, the dog is marked defeated and
+  cannot take more damage. A grounded defeated dog stays down for about
+  4.5 seconds. If it is still flying, its finish reward is settled when it
+  lands. It then respawns at its home by the dog house with restored health
+  and reset temporary effects. A finish is paid once only. Landing rewards
+  and finish rewards can both be earned from the same flight.
+
+  If the dog flies far outside the yard and is not defeated, it is returned
+  home after a short delay once its flight is over. Session objects such as
+  poop, snow blocks, snowballs, the free ball, John, and the player's current
+  position are not restored from a previous visit.
+
+
+4. HOTBAR AND SHOP INVENTORY
+----------------------------
+Starting items
+  Kick       Basic close-range launch; sprinting creates a stronger flight.
+  Punch      Short-range hit; also punches the dog while it is being held.
+  Pet        Improves mood when successful; may provoke an angry dog.
+  Kiss       Aim at the top of the dog's head from nearby to improve mood.
+  Glue       Spray glue to make the dog stick to surfaces.
+  Ball       Reusable throw-and-fetch toy.
+  Feed       Put food in the bowl by the dog house.
+  Snowball   Available only in Winter; throw at the dog or build with B.
+
+Shop items
+  Item                 Cost       Type       Main effect
+  Bat                  60 coins   Permanent  Swing; sprint for a Home Run.
+  Pistol              180 coins   Permanent  Semi-automatic, eight-round tool.
+  Milk                 25 coins   Consumable Randomly helpful or harmful.
+  Brass Knuckles       90 coins   Permanent  Uppercut; sprint for extra height.
+  Bone                 15 coins   Consumable Raises mood and chewing behavior.
+  John the Fish       120 coins   Consumable Summons a temporary fighter.
+  Grapes               30 coins   Consumable Causes illness and damage.
+  Chocolate            35 coins   Consumable Causes damage and affection.
+  Chain                75 coins   Permanent  Links the player and dog together.
+
+Permanent items remain unlocked after purchase. Consumable items are used
+up when their effect is applied and can be bought again. The shop and
+inventory are saved locally. A purchase is unavailable if the player lacks
+coins, and already-owned permanent items cannot be purchased again.
+
+The shop opens with E when the player is within about 3.2 m of the stand and
+not ragdolled. It can also be closed with E or the Leave button. The HUD
+shows the coin balance and the selected item. Consumable hotbar slots show
+their remaining count.
+
+Item behavior details
+  Kick:
+    At close range, launches the dog forward. Sprint + Kick increases the
+    launch distance. A normal kick against a glued dog does not release it;
+    a sprint kick can break the attachment.
+
+  Punch:
+    A short launch and light damage. If the dog is glued in place, a punch
+    only produces a reaction and anger rather than freeing it.
+
+  Brass Knuckles:
+    Uppercuts the dog. Holding Sprint increases vertical force. Uppercut
+    height can be scored even when the dog lands inside the yard.
+
+  Bat:
+    A normal swing launches the dog; Sprint + Bat performs a Home Run with
+    more force and a longer flight.
+
+  Pistol:
+    Click once per shot. It has eight rounds, a 1.35-second reload, and
+    reloads automatically when emptied. G starts a reload early. Each shot
+    uses no separate ammo purchase; reloading refills the magazine. The
+    camera crosshair determines the ray direction. Shots travel at most
+    65 m, hit the dog or the nearest solid collider, and can extend a flight
+    chain. The HUD displays rounds and reload status when the pistol is
+    selected.
+
+  Milk:
+    The dog’s tolerance is a random session value, roughly a 50/50 chance.
+  Both outcomes restore up to 70 points on the thirst meter. A tolerant dog
+  gains mood; an intolerant dog takes immediate damage, then continuing
+  illness damage.
+
+  Bone:
+    Raises mood and makes the dog chew for a short time. It can interrupt
+    the chewing by grabbing or launching the dog.
+
+  John the Fish:
+    Summons John near the dog for a brief fight. John punches the dog; the
+    dog chases and attacks John. Either fighter can be knocked out. John
+    leaves after about 30 seconds if still active. Only one John can be
+    active at once.
+
+  Grapes:
+    Causes immediate damage and a period of continuing illness damage.
+
+  Chocolate:
+    Causes damage, sets mood high, and makes the dog temporarily affectionate.
+    The affection does not cancel chocolate's damage.
+
+  Feed:
+    Requires the player to be near the bowl. It fills the bowl and attracts
+    the dog. When the dog finishes eating, its mood improves. In Summer, the
+    bowl also supplies water and eating restores thirst.
+
+
+5. SEASONS AND SNOW
+-------------------
+T cycles through Default, Spring, Summer, and Winter. The selected season
+persists in the local save. The world appearance, lighting, plants, ground,
+and weather change with the season.
+
+Default
+  Normal yard appearance. The dog’s thirst recovers when it is not Summer.
+
+Spring
+  Flies gather near the trash, the bowl, and visible messes. The dog may
+  wander over to bugs and snap at them. Bug snaps count toward an achievement.
+
+Summer
+  The screen has a heat effect and the dog’s Thirst bar is shown. Thirst
+  decreases over time. A very thirsty dog can become less content and move
+  more slowly. Fill the bowl using Feed; the dog must eat the food for its
+  thirst to be restored. Milk also provides some thirst relief.
+
+Winter
+  The ground, vegetation, water, and lighting change and snow falls. Snowball
+  is added to the hotbar. Click to throw a snowball. Hold B to place snow
+  blocks on the ground in front of the player. Snowballs can hit an airborne
+  dog to add a flight hit. A flying dog can break blocks on collision.
+
+  Snow blocks use a 0.9 m grid and are 0.5 m tall per level. Each stack can
+  be at most four blocks high. At most 90 blocks exist at once; older blocks
+  are removed when that total is exceeded. Blocks cannot be placed in the
+  road strip or through the player or dog. Leaving Winter clears placed
+  blocks and snowballs.
+
+
+6. FLIGHT SCORING AND COINS
+---------------------------
+A flight begins with the first launch and ends when the dog settles after
+landing. Repeated hits while airborne extend the same flight. The game
+tracks the first launch point, last launch kind, hit sequence, hit count,
+flight time, maximum height, object impacts, and snow blocks smashed.
+
+Multiplier
+  Start with x1.00.
+  If the dog was angry at the first launch, multiply by x1.50.
+  If the flight has more than one hit, multiply by x1.25.
+  Each named combo found on landing adds +0.25 to the combo factor:
+    1 combo = x1.25; 2 combos = x1.50; 3 combos = x1.75, and so on.
+  These factors multiply. Fixed combo coin bonuses are added separately.
+
+Ordinary flight landing outside the yard
+  Base coins = max(1, round(horizontal distance in metres x multiplier)).
+  Grade: SSS at 110 m; S at 85 m; A at 65 m; B at 45 m; C at 28 m;
+  otherwise D.
+
+Uppercut flight
+  When the last launch kind is Uppercut and maximum height exceeds 5 m:
+  Base coins = round(maximum height x 1.2 x multiplier).
+  Grade: S at 45 m; A at 34 m; B at 24 m; C at 15 m; otherwise D.
+  This height-based score can pay when the dog lands inside the yard.
+
+Traffic flight
+  A flight whose last launch kind is Traffic uses traffic scoring, including
+  a flight where the dog was launched by another hit before a car impact.
+  Base coins = max(3, round(horizontal distance x multiplier)), plus 15 if
+  the flight sequence contains any non-traffic hit, or plus 5 if it does
+  not. This +15 test checks the whole flight sequence; it is separate from
+  the named Traffic Assist combo, which requires another sequence entry
+  before the traffic hit.
+  Grade: S at 60 m; A at 42 m; B at 28 m; C at 16 m; otherwise D.
+  Traffic scoring can pay for a landing inside the yard.
+
+Landing inside the yard
+  An ordinary flight with no named combo pays no flight coins. If one or
+  more named combos are found, it pays a distance-based base (minimum 1)
+  plus the fixed combo bonuses. Uppercut and traffic flights follow their
+  own rules above and can pay inside the yard.
+
+Additional coin events
+  Player hit by a car: +5 coins.
+  Player survives a close call with a car: +3 coins.
+  Named combos: their fixed bonuses, added to the landing reward.
+
+Best ordinary distance, uppercut height, and traffic distance are saved.
+Total coins earned counts coins before spending, and is used for coin
+milestone achievements.
+
+
+7. NAMED FLIGHT COMBOS
+----------------------
+Combos are evaluated when a flight lands. More than one can be awarded by
+the same flight, and their fixed rewards and multiplier additions stack.
+The achievements panel hides names for undiscovered combos but keeps their
+hints visible.
+
+Name                  Bonus   Requirement
+Kick-Car Special       +25     Kick or Sprint Kick, then a car hit.
+Hit and Run            +30     Bat or Home Run, then a car hit.
+Express Delivery       +30     Throw, then a car hit.
+Uppercut Express       +30     Uppercut, then a car hit.
+Drive-By               +35     Pistol hit, then a car hit.
+Traffic Assist         +15     Another kind of flight event, then a car hit,
+                               without a listed launch hit before the car.
+Rush Hour              +50     Two car hits in one flight.
+Juggler                +20     At least three flight hits.
+Double Tap             +10     Two consecutive identical player hit types.
+Volleyball Spike       +25     Uppercut immediately followed by Kick,
+                               Sprint Kick, Bat, or Home Run.
+Shooting Star          +25     Uppercut, followed later by a Pistol hit.
+Bullet and Bat         +25     Pistol hit, followed later by Bat or Home Run.
+Triple Tap             +30     At least three Pistol hits in one flight.
+Pinball                +20     At least three solid-object impacts.
+Wall Banger             +15     Smash at least one snow block in flight.
+Demolition             +30     Smash at least three snow blocks in flight.
+Snow Job               +10     Hit the airborne dog with a Snowball.
+Knuckle Sandwich       +15     Punch at least three times while holding it,
+                               then throw it to start the flight.
+Tag Team               +20     John and a player hit appear in one flight.
+Sticky Situation       +20     Glue the dog to a wall during a flight.
+Pool Party             +25     Land in the kiddie pool.
+Hang Time              +15     Stay airborne for more than three seconds.
+Sky High               +20     Reach more than 25 m without an Uppercut.
+Special Order           +40     Land near the shop stand across the road.
+Boomerang              +15     Fly over 1.8 seconds and land within 2.5 m
+                               of the first launch point.
+Over The Fence         +10     Start the flight with a throw and land outside.
+
+Combo notes
+  A “hit” includes launch hits while airborne. Punches made while the dog is
+  being held are also counted when the dog is thrown, up to eight punches.
+  Snowballs add a flight hit only when they hit an airborne dog. Traffic
+  entries are counted as their own hit type. For Double Tap, types must match
+  exactly; Kick and Sprint Kick are different types.
+
+  “Traffic Assist” means an earlier flight event precedes the first car hit,
+  with no Kick, Sprint Kick, Bat, Home Run, Throw, Uppercut, or Pistol among
+  those earlier events. “Traffic scoring +15” uses a broader test: any
+  non-traffic event anywhere in the flight sequence is enough.
+
+
+8. DEFEAT FINISHES
+------------------
+A defeated dog pays a base reward of 35 coins. Qualifying finish styles add
+fixed bonuses and may stack. A different damage method from the previous
+finish adds 12 coins. The method is the damage source recorded at the moment
+health reaches zero. Every finish reward is paid once.
+
+Style bonus         Bonus   Requirement
+Final Shot           +25    Pistol delivers the finishing damage.
+Long Shot            +35    Pistol finish from 25 m or farther.
+Roadkill             +35    A car appears in the finishing flight or deals
+                            the finishing damage.
+Airborne Finish      +20    Finishing damage lands while the dog is airborne
+                            above the game's airborne threshold.
+Skyfall              +40    A collision delivers the finish after the flight
+                            reaches at least 15 m maximum height.
+Combo Finisher       +30    Finishing flight has at least three hits.
+Snow Demolition      +25    At least one snow block is smashed in the
+                            finishing flight.
+Batter Up            +30    Bat or Home Run deals the finishing damage.
+Spike and Strike     +45    The finishing flight contains an Uppercut and a
+                            Bat or Home Run.
+Poolside             +25    Finish occurs in the kiddie pool.
+Bad Dinner           +25    Milk or Grapes delivers the finishing damage.
+Sweet Tooth          +30    Chocolate delivers the finishing damage.
+
+The first matching style in the list supplies the displayed finish name.
+The fixed bonuses of all matching styles are still added together. If no
+style matches, the displayed name is “Final Blow.” Finish milestones unlock
+at 1, 10, and 50 defeats. Finish coins are separate from flight landing
+coins, so the same flight can receive both payouts.
+
+
+9. ACHIEVEMENTS
+---------------
+The H key or Achievements button opens the panel. Unlocked achievements
+show as complete; locked achievements still display their descriptions.
+Unlock banners appear temporarily. Progress is stored locally.
+
+Flights and traffic
+  Liftoff                 Launch the dog out of the yard.
+  Frequent Flyer          Land outside the yard at 50 m or farther.
+  Orbit                   Land outside the yard at 100 m or farther.
+  Stratosphere            Reach at least 30 m on an Uppercut flight.
+  S Rank                  Earn an S or SSS flight grade.
+  Didn't Look Both Ways   Get the dog hit by a car.
+  Kick-Car Special        Land the Kick-Car Special combo.
+  Rush Hour               Land the Rush Hour combo.
+  Jaywalker               Get hit by a car yourself.
+  Frogger                 Get hit by cars five times.
+  Matador                 Survive ten car close calls.
+  Special Delivery        Throw the dog out of the yard.
+  Juggler                 Land a three-hit flight.
+  Pinball Wizard          Land the Pinball combo.
+
+Combos and discoveries
+  Combo Master            Land three named combos in one flight.
+  Combo Collector         Discover ten different named combos.
+  Seen It All             Discover every named combo.
+  Knuckle Sandwich        Land the Knuckle Sandwich combo.
+  Snow Job                Land the Snow Job combo.
+  Pool Party              Land the Pool Party combo.
+  Sticky Situation        Land the Sticky Situation combo.
+  Hang Time               Land the Hang Time combo.
+  Special Order           Land the Special Order combo.
+  Shooting Star           Land the Shooting Star combo.
+  Triple Tap              Land the Triple Tap combo.
+  Drive-By                Land the Drive-By combo.
+
+Dog, player, and world interactions
+  You Knew This Would Happen  Let an angry dog break free from a grab.
+  Soft Spot                   Kiss the dog ten times.
+  Good Boy (Allegedly)        Pet the dog 50 times.
+  Bought Its Love             Give the dog chocolate.
+  Science                    Give the dog milk.
+  Fish Down                  Get John the Fish knocked out.
+  Fort Knox                  Build 25 snow blocks.
+  Nobody's Cleaning That     Witness five poops.
+  Beat Up By A Dog           Get knocked out by the dog.
+  Stand Regular              Earn 500 coins over time.
+  Dog Tycoon                 Earn 3,000 coins over time.
+  Four Seasons               Visit Default, Spring, Summer, and Winter.
+  Nature Documentary         Watch the dog snap at ten bugs.
+
+Pistol achievements
+  New Toy                 Buy the pistol from the stand.
+  First Shot              Hit the dog with a pistol shot.
+  Skeet Shooter           Hit the airborne dog with a pistol shot.
+  Long Shot               Hit the dog with a pistol shot from 25 m away.
+  Gunslinger              Hit the dog with the pistol 25 times.
+
+Finish achievements
+  Final Blow              Defeat the dog for the first time.
+  Repeat Offender         Defeat the dog ten times.
+  The Usual               Defeat the dog 50 times.
+  Final Shot              Finish with a pistol shot.
+  Long Shot Finish        Finish with a pistol shot from 25 m or farther.
+  Roadkill                Have a car in the finishing flight or finish by car.
+  Airborne Finish         Finish while the dog is airborne.
+  Skyfall                 Finish with a collision after reaching 15 m.
+  Combo Finisher          Finish a flight with at least three hits.
+  Snow Demolition         Smash a snow block during the finishing flight.
+  Batter Up               Finish with Bat or Home Run damage.
+  Spike and Strike        Uppercut and bat during the finishing flight.
+  Poolside                Finish in the kiddie pool.
+  Bad Dinner              Finish with Milk or Grapes damage.
+  Sweet Tooth             Finish with Chocolate damage.
+
+Coin milestone totals include coins later spent at the shop. With infinite
+health on, the dog cannot normally be defeated by damage; the I toggle also
+resolves and pays for an already-defeated dog when enabled.
+
+
+10. LOCAL SAVE DATA
+-------------------
+The game uses browser localStorage under this key:
+  familydog-save
+
+There is no account login, backend, or cloud synchronization. A save is
+specific to the browser storage for this project. Clearing the site's local
+storage removes it. Values are written as they change.
+
+Persistent fields
+  coins             Current spendable coin balance.
+  earned            Lifetime coins earned before purchases.
+  best              Best ordinary horizontal flight distance, in metres.
+  bestH             Best Uppercut height, in metres.
+  bestTraffic       Best traffic-flight distance, in metres.
+  season            Last selected season.
+  inv               Owned permanent items and consumable counts.
+  selectedTool      Previously selected hotbar item; falls back to Kick if
+                    it is not currently available.
+  pistolAmmo        Remaining magazine rounds from 0 through 8.
+  infiniteHealth    Whether infinite health is enabled.
+  ach               Achievement IDs and their unlock timestamps.
+  stats             Counters: pets, kisses, near misses, blocks, poops,
+                    bug snaps, player car hits, pistol hits, and finishes.
+  combos            Number of landings for each discovered combo ID.
+  seenSeasons       Seasons visited for the Four Seasons achievement.
+  lastFinishKind    Damage method used for the previous finish.
+  bestFinishStyles  Most style bonuses received on a single finish.
+
+Session-only state
+  Player/dog positions, current health, dog mood, temporary effects, current
+  flight sequence, John's state, the loose ball, poop objects, snowballs,
+  placed snow blocks, camera mode, current reload timer, and open panels are
+  not saved. Restarting the page resets these. The dog’s lactose tolerance
+  is also session-only and is randomized again at startup.
+
+
+11. PROJECT FILES
+-----------------
+index.html
+  Project entry point. Defines the canvas, HUD, title, shop and achievement
+  panels, the Three.js import map, and loads js/main.js as a module.
+
+style.css
+  Presentation for the title screen, HUD, hotbar, toast/result labels,
+  shop, achievement panel, and small-screen layout.
+
+js/main.js
+  Initializes the renderer, scene, world, player, dog, items and UI. Handles
+  input, camera, tools, shop, seasons, traffic hooks, snow, scoring, local
+  saving, the HUD, and the main animation/update loop.
+
+js/dog.js
+  Builds and updates the dog. Contains its movement, mood and health,
+  ground behavior, flight physics, collision response, illness, grabbing,
+  defeat, and respawn state.
+
+js/player.js
+  Builds and updates the player character, walking, sprinting, jumping,
+  tool animations, health, ragdoll, knockout, and respawn.
+
+js/world.js
+  Builds the yard, house, fence, stand, road, terrain, lights, sky, props,
+  seasonal appearance, bowl, and common scenery.
+
+js/physics.js
+  Shared gravitational constant and static box colliders. Resolves sphere
+  collisions by pushing an object out of a box and adjusting its velocity.
+
+js/cars.js
+  Creates the looping traffic and detects hits or close calls with the
+  player, dog, and John.
+
+js/snow.js
+  Simulates thrown snowballs and maintains placeable/destructible snow
+  blocks and their collision boxes.
+
+js/bugs.js
+  Creates the spring fly swarms around their current sources and updates
+  their visual positions.
+
+js/john.js
+  Builds and updates John the Fish, his boxing behavior, health, knockouts,
+  and timed departure.
+
+js/fx.js
+  Manages particles, floating labels, speech bubbles, camera projection,
+  glue spray, poop props, flashes, and other short-lived visual effects.
+
+js/models.js
+  Procedural Three.js meshes, materials, textures, and equipment models.
+
+js/audio.js
+  Loads and plays local sound effects after the Play interaction enables
+  browser audio.
+
+js/progress.js
+  Defines the named combos and achievement catalog, tests flight sequences,
+  updates progress counters, awards milestone achievements, and fills the
+  achievements panel.
+
+js/finishes.js
+  Evaluates finish styles and their fixed coin bonuses.
+
+sfx/*.wav
+  Local sound effects loaded by js/audio.js: achieve, bark, bat, coins,
+  crunch, eat, fart, growl, happy, horn, kick, kiss, pistol, poof, punch,
+  slam, snap, splat, squirt, and whoosh.
+
+DOCUMENTATION.txt
+  This guide.
+
+
+12. RUNTIME AND TECHNICAL DESIGN
+--------------------------------
+The project is served directly as static files; it has no build step,
+package.json, package installation, or server.js backend. The HTML entry
+loads a browser JavaScript module. Three.js 0.165.0 and its RoomEnvironment
+example are imported through the import map from unpkg. The Fredoka font is
+requested from Google Fonts. Those external resources need network access.
+The sound files and project source modules are local relative-path assets.
+
+The renderer uses WebGL, antialiasing, shadows, tone mapping, and an
+environment texture generated from RoomEnvironment. The world and character
+models are assembled procedurally from Three.js geometry; no external 3D
+model files are needed. Ground, grass, snow, wood, and several labels use
+procedurally generated canvas textures.
+
+The main module runs a requestAnimationFrame loop. It clamps large frame
+deltas, subdivides physics updates into steps no larger than about 1/120 s,
+updates traffic and effects, refreshes the HUD, and renders the scene. Short
+slow-motion moments scale the simulation update while keeping selected
+real-time interface timers separate.
+
+Physics is custom and lightweight rather than a third-party rigid-body
+engine. The physics module stores axis-aligned box colliders. The player,
+dog, John, ball, and snowballs are advanced by JavaScript and checked
+against those boxes. Traffic collision checks use the car and character
+bounds directly. Dog flights retain a launch record until landing so scoring
+and combo checks can use the full sequence.
+
+
+13. SOURCE EDITING GUIDE
+------------------------
+Use these locations when changing a system:
+  Controls and input mapping       js/main.js, Input section.
+  Tool definitions and shop costs  js/main.js, TOOLS and SHOP arrays.
+  Tool effects                     js/main.js, useTool().
+  Shop and hotbar behavior          js/main.js, renderShop/rebuildHotbar.
+  Season switching                 js/main.js, setSeason(); visuals in
+                                   js/world.js.
+  Dog behavior and flight physics  js/dog.js.
+  Player movement and health        js/player.js.
+  Traffic speed and contact rules   js/cars.js.
+  Snowball/block limits             js/snow.js.
+  World layout and yard bounds      js/world.js.
+  Collision behavior                js/physics.js.
+  Named combos and achievements     js/progress.js.
+  Finish-style rules and bonuses    js/finishes.js.
+  Visual and floating effects       js/fx.js.
+  Models and procedural textures    js/models.js.
+  Sound list and playback           js/audio.js plus matching sfx files.
+  HUD and panel layout              index.html and style.css.
+  Persistent save defaults          js/main.js, Save section.
+
+When adding a new combo, update its definition in js/progress.js. If it
+should also unlock a standalone achievement, add or update the corresponding
+achievement entry and combo-unlock mapping there. Finish bonuses are a
+separate system in js/finishes.js and should not be confused with flight
+combo bonuses. New saved fields should have a default or migration-safe
+fallback before code reads them, and persistent values should be written
+through the existing persist() function.
+
+
+14. ASSET AND BROWSER NOTES
+---------------------------
+The game needs a browser with WebGL and ES module support. The preview server
+provides the correct local paths and module behavior. Opening index.html as a
+file URL may be blocked by browser module/CORS rules; use the project preview
+or another local HTTP server instead.
+
+Audio is initialized from the Play button because browsers generally require
+an interaction before creating or resuming audio playback. Individual WAV
+loading failures are ignored by the audio loader, so gameplay can continue
+without a sound if an asset cannot be loaded. Three.js and the font are
+external imports; if the network blocks them, the page may render without
+those dependencies.
+
+The project has no server-side routes and does not call platform account,
+comment, upload, notification, or AI APIs. Persistent progress is local to
+the browser storage described above.
+
+
+15. DISCLAIMER AND REAL-WORLD HELP
+----------------------------------
+The in-game title screen identifies the violence as fictional cartoon
+slapstick and states that no real animals were harmed. It also states the
+creator's opposition to real animal abuse and provides reporting guidance.
+For suspected real abuse, contact the relevant local animal welfare agency
+or police. If an animal is in immediate danger, contact the local emergency
+service. The title screen includes region-specific links and phone numbers
+for the United States, Canada, England and Wales, and Scotland.
+
+
+16. MASSACHUSETTS ADDITIONS
+---------------------------
+The street now has wandering pedestrians and erratic traffic. Drivers swerve,
+accelerate toward characters they see on the road, and can spin out on soft
+poop. Some drivers call out "I love Choosin' Texas!"; pedestrians say
+"I live in Massachusetts!", chat with the player, pet the dog, and may
+scold or record a nearby fight. A large Massachusetts welcome sign stands
+near the shop.
+
+Dog poop comes in hard and soft piles. Press F near a pile to pick it up,
+aim the camera and press Q to throw it, or click to set it down. A hit blinds
+the dog or a pedestrian; hard poop also knocks the target back, while soft
+poop blinds longer. Put a soft pile in the road to spin out a passing car.
+The aim arc also appears while carrying the dog or a pedestrian, or when
+the bomb is equipped. The trampoline in your yard bounces airborne
+characters, including the player.
+
+The shop sells bombs, land mines, and yogurt. Bombs can be aimed and thrown;
+mines are placed on the ground and trigger when someone or a car crosses
+them. Yogurt makes the dog remember Obese Sonic and become sad.
+
+The PETA bunker sits by the neighboring house on your side of the street.
+Carry the dog inside to one of its seven stations and press E to use it.
+The dog cowers and cries inside, and is visibly afraid nearby. Dogs and
+pedestrians thrown into house windows break the glass, then jump back out.
+A drop from an upstairs window causes fatal fall damage. Windows repair
+themselves after a few seconds. Pedestrians can also be grabbed, punched,
+thrown, kicked, shot, snowballed, blinded with poop, struck by traffic,
+and caught in explosions.
+
+
+17. E-BIKES, MOTHERS, AND GAMEPLAY TOGGLES
+-----------------------------------------
+An airborne dog now collides with pedestrians: they get knocked aside and
+the impact counts toward the dog's flight combo. Two children ride e-bikes
+along the sidewalks and shout frequent rude, profane, deliberately foolish
+lines when nearby. Bike riders wobble and complain if the airborne dog
+bumps their bicycle. Some adult pedestrians are conspicuously large mothers
+who complain about how badly they parent and how much their children annoy
+them. Other pedestrians have an expanded set of foolish remarks.
+
+Press V to turn car traffic on or off. Press L for infinite dog love; in
+this mode the dog stays affectionate and will never attack the player.
+Both settings persist in the browser. On touch devices, the TRAFFIC and
+LOVE buttons are in the MORE controls tray.
+
+Riders now tumble off their bikes when you pull them off with F, knock the
+bike with a melee action, throw the dog into it, or burst a tire. The rider
+recovers and eventually returns. Press F again by an unattended e-bike to
+take it; use WASD to ride and F to park. The touch GRAB button performs
+the same actions and changes to PARK while riding. New achievements track
+knocking riders off, taking both bikes, riding far and into the road, and
+dog-to-pedestrian impacts. The Massachusetts sign has a second panel below
+its welcome message: "We're all stupid jackasses!"
+
+
+18. CIVILIAN ACHIEVEMENTS AND COMBOS
+------------------------------------
+The achievement panel now includes milestones for pedestrian interactions:
+conversations, mothers, witnesses who scold or record, thrown poop, window
+impacts, traffic, snowballs, explosions, knockouts, throws, and long flights.
+The newer bike, trampoline, bunker, yogurt, and slippery-road interactions
+also have achievements. Achievements persist in local storage.
+
+Civilian combos are listed separately from dog combos in the Combos panel.
+Each pedestrian flight records its hits, height, airtime, surfaces struck,
+and the actions in order. Examples include kicking a pedestrian into
+traffic, throwing one through a window, landing an airborne snowball,
+bouncing one on the trampoline, and dog-then-car impacts. Combos award
+coins on landing; first discoveries unlock named achievements. The dog
+also has new combos for trampoline bounces, e-bike collisions, and
+pedestrian impacts.
+
+19. CIVILIAN-TO-CIVILIAN AND RIDER IMPACTS
+-----------------------------------------
+Hold F near an adult pedestrian to carry them; aim and press Q to throw
+them into another pedestrian or an e-bike rider. Both react to the impact,
+and the airborne pedestrian can continue into a second target. Pull a
+rider off an e-bike with F, then press F near the fallen rider to pick
+them up. Aim and press Q to throw the rider into an adult. You can still
+steal the unattended bike when its rider is no longer nearby. Riders
+tumble and recover; these collisions award new achievements and civilian
+flight combos, including multiple targets, mothers, riders, and traffic.
+The touch GRAB and THROW buttons support the same actions.
+
+20. BUNKER ANNEX AND BURGERS
+--------------------------------------
+The PETA building now has two connected annex rooms with a shredder and
+a burger grinder. Bring a carried dog or adult civilian to a station and
+press E to use it. Both stations use comic effects and return characters
+intact after the scene. The grinder dispenses a hamburger at its output
+and adds one to your hotbar. Equip it and click near a civilian, rider,
+John, or the dog. Some recognize where it came from; others enjoy it. Use it
+alone to eat it yourself. The achievement panel tracks the new rooms, burgers,
+and civilian visits.
+
+21. HEAD GRABS AND TOY KNIFE
+----------------------------
+Aim at a head and press F (or hold Shift while pressing F) to head-grab
+a dog, adult, or dismounted e-bike rider. Q throws the held character.
+The shop's toy knife uses right click for a comic stab. Hold Shift and
+right click to slice. On touch screens, tap USE to stab or hold RUN + USE
+to slice. Head grabs and knife moves unlock achievements; head-grab throws
+add civilian flight combos. None of the effects show gore.

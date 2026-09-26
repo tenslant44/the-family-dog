@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Family Dog</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.165.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.165.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="heat"></div>
+<div id="flash"></div>
+<div id="labels"></div>
+
+<div id="hud">
+  <div id="dogcard">
+    <div class="dname" id="dogName">The Family Dog</div>
+    <div class="row"><span>Mood</span><div class="bar mood"><i id="moodMark"></i></div></div>
+    <div class="row"><span>Health</span><div class="bar hp"><i id="dogHp"></i></div></div>
+    <div class="row" id="thirstRow" style="display:none"><span>Thirst</span><div class="bar th"><i id="dogTh"></i></div></div>
+    <div id="tags"></div>
+  </div>
+  <div id="wallet">
+    <div><b id="coins">0</b> coins</div>
+    <div id="best"></div>
+    <div id="finishes"></div>
+    <div id="season"></div>
+    <div id="healthMode" class="hidden">∞ HEALTH <kbd>I</kbd></div>
+    <div id="trafficMode" class="hidden">TRAFFIC OFF <kbd>V</kbd></div>
+    <div id="loveMode" class="hidden">♥ DOG LOVE <kbd>L</kbd></div>
+    <div id="saveStatus">Saved on this device</div>
+    <button id="achOpen" type="button">🏆 Achievements</button>
+  </div>
+  <div id="crosshair"></div>
+  <div id="dogCamHint" class="hidden">DOG CAM <kbd>C</kbd> exit</div>
+  <div id="ammo" class="hidden"></div>
+  <div id="prompt"></div>
+  <div id="toast"></div>
+  <div id="comboLive"></div>
+  <div id="result"></div>
+  <div id="ach" role="status" aria-live="polite"></div>
+  <div id="bottom">
+    <div id="php"><i id="phpFill"></i></div>
+    <div id="hotbar"></div>
+  </div>
+</div>
+
+<div id="mobileControls" aria-label="Touch controls">
+  <div id="moveStick" class="move-stick" aria-label="Move">
+    <span class="stick-ring"></span>
+    <span id="stickKnob" class="stick-knob"></span>
+    <span class="stick-label">MOVE</span>
+  </div>
+  <div class="touch-actions" aria-label="Actions">
+    <button id="touchUse" class="touch-button primary" type="button" aria-label="Use selected item"><span>✦</span><b>USE</b></button>
+    <button id="touchJump" class="touch-button" type="button" aria-label="Jump"><span>↑</span><b>JUMP</b></button>
+    <button id="touchSprint" class="touch-button" type="button" aria-label="Hold to sprint" aria-pressed="false"><span>»</span><b>RUN</b></button>
+    <button id="touchGrab" class="touch-button" type="button" aria-label="Grab or drop the dog"><span>✋</span><b>GRAB</b></button>
+    <button id="touchThrow" class="touch-button" type="button" aria-label="Throw the dog"><span>↗</span><b>THROW</b></button>
+    <button id="touchMore" class="touch-button more-button" type="button" aria-label="More controls" aria-expanded="false"><span>•••</span><b>MORE</b></button>
+  </div>
+  <div id="touchMoreTray" class="touch-more-tray hidden" aria-label="More controls">
+    <button id="touchRagdoll" type="button">RAGDOLL</button>
+    <button id="touchReload" type="button">RELOAD</button>
+    <button id="touchDogCam" type="button">DOG CAM</button>
+    <button id="touchBuild" type="button" aria-pressed="false">BUILD</button>
+    <button id="touchSeason" type="button">SEASON</button>
+    <button id="touchHealth" type="button">∞ HEALTH</button>
+    <button id="touchTraffic" type="button">TRAFFIC ON</button>
+    <button id="touchLove" type="button">♥ LOVE OFF</button>
+    <button id="touchShop" type="button">SHOP</button>
+    <button id="touchAchievements" type="button">AWARDS</button>
+    <button id="touchCloseMore" type="button">CLOSE</button>
+  </div>
+</div>
+
+<div id="achPanel" class="hidden">
+  <div class="panel">
+    <div class="shead"><div><h2>Achievements</h2><div id="achCount"></div></div><button id="achClose" type="button">Close</button></div>
+    <h3>Achievements</h3><div id="achList" class="progress-list"></div>
+    <h3>Combos</h3><div id="comboList" class="progress-list"></div>
+  </div>
+</div>
+
+<div id="shop" class="hidden">
+  <div class="panel">
+    <div class="shead"><h2>Street Stand</h2><div class="scoins"><b id="shopCoins">0</b> coins</div></div>
+    <div id="shopItems"></div>
+    <button id="shopClose">Leave <kbd>E</kbd></button>
+  </div>
+</div>
+
+<div id="start">
+  <div class="panel">
+    <h1>THE FAMILY DOG</h1>
+    <p class="lore">What did The Family Dog even do? It won't eat its own poop. Nobody wants to clean it up. So Obese Sonic eats it. Nasty.</p>
+    <div class="keys">
+      <span><kbd>WASD</kbd> move</span><span><kbd>Shift</kbd> sprint</span><span><kbd>Space</kbd> jump</span>
+      <span><kbd>Left Click</kbd> use selected tool</span><span><kbd>1-0</kbd>/<kbd>Scroll</kbd> items</span>
+      <span><kbd>R</kbd> ragdoll</span><span><kbd>E</kbd> shop / bunker</span>
+      <span><kbd>F</kbd> grab / take or park bike</span><span><kbd>Q</kbd> aim + throw</span><span><kbd>G</kbd> reload pistol</span><span><kbd>C</kbd> dog camera</span><span><kbd>I</kbd> infinite health</span><span><kbd>L</kbd> infinite dog love</span><span><kbd>V</kbd> traffic on / off</span><span><kbd>T</kbd> season</span><span><kbd>B</kbd> build (winter)</span><span><kbd>H</kbd> achievements</span>
+      <span><kbd>Right Click</kbd> stab with Toy Knife</span>
+      <span><kbd>Shift + Right Click</kbd> slice with Toy Knife</span>
+    </div>
+    <p class="touch-guide">Move with the left stick · drag the open screen to look · tap USE to stab with the Toy Knife · hold RUN + USE to slice</p>
+    <p class="tip">Sprint + kick to launch it out of the yard. Far launches earn coins for the stand across the street.</p>
+    <button id="play">Play</button>
+    <p class="disc">Cartoon violence toward a fictional dog. No real animals were harmed. Be kind to real animals.</p>
+    <details class="full-disc">
+      <summary>Full disclaimer &amp; real-world help</summary>
+      <div class="disc-copy">
+        <p><strong>About the game:</strong> The Family Dog is a fictional slapstick game built around an inside joke and meant as stress relief. It depicts exaggerated, player-triggered violence toward a cartoon dog. The dog can fight back and knock the player down, so the gameplay is not one-sided. It is all for laughs and giggles; no real animals were used or harmed, and the joke is never real animal suffering.</p>
+        <p><strong>My position:</strong> I do not support or excuse animal abuse. Real abuse and neglect are cruel and unacceptable. People who abuse animals are genuine assholes; I consider them subhuman and think they deserve to go to an electric chair.</p>
+        <p><strong>If you see animal abuse in real life:</strong> Contact local animal control or police to report suspected abuse. If an animal is in immediate danger, call your local emergency number.</p>
+        <ul>
+          <li><strong>United States:</strong> Call 911 for immediate danger. For other reports, contact local animal control or police; <a href="https://www.humaneworld.org/en/issue/report-animal-cruelty" target="_blank" rel="noopener noreferrer">Humane World for Animals’ reporting guide</a> has more information.</li>
+          <li><strong>Canada:</strong> Contact your local animal control agency, SPCA, or police. Call 911 for immediate danger.</li>
+          <li><strong>England and Wales:</strong> Call the <a href="https://www.rspca.org.uk/utilities/contactus/reportcruelty" target="_blank" rel="noopener noreferrer">RSPCA cruelty line</a> at <a href="tel:03001234999">0300 1234 999</a>.</li>
+          <li><strong>Scotland:</strong> Call the <a href="https://www.scottishspca.org/contact/" target="_blank" rel="noopener noreferrer">Scottish SPCA helpline</a> at <a href="tel:03000999999">03000 999 999</a> (open daily, 9 a.m.–5 p.m.).</li>
+          <li><strong>Elsewhere:</strong> Contact your local animal welfare authority or police; call your local emergency number if the animal is in immediate danger.</li>
+        </ul>
+      </div>
+    </details>
+  </div>
+</div>
+
+<div id="paused" class="hidden">Click to resume</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
